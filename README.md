@@ -3,6 +3,7 @@
 |             | type        | languages          |
 |-------------|-------------|--------------------|
 | simple-view | Native view | Java & Objective-C |
+| modern-view | Native view | Kotlin & Swift     |
 
 # How to run
 
