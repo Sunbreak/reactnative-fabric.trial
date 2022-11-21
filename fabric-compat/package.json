@@ -152,5 +152,10 @@
         }
       ]
     ]
+  },
+  "codegenConfig": {
+    "name": "RNFabricCompatViewSpec",
+    "type": "components",
+    "jsSrcsDir": "src"
   }
 }
