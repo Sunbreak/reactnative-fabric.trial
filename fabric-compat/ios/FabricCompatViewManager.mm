@@ -17,7 +17,7 @@ RCT_EXPORT_MODULE(FabricCompatView)
 
 RCT_CUSTOM_VIEW_PROPERTY(color, NSString, UIView)
 {
-  [view setBackgroundColor: [Utils hexStringToColor:colorToConvert]];
+  [view setBackgroundColor: [Utils hexStringToColor:json]];
 }
 
 @end
