@@ -1,9 +1,10 @@
 # Projects
 
-|             | type        | languages          |
-|-------------|-------------|--------------------|
-| simple-view | Native view | Java & Objective-C |
-| modern-view | Native view | Kotlin & Swift     |
+|               | type                             | languages          |
+|---------------|----------------------------------|--------------------|
+| simple-view   | Native view                      | Java & Objective-C |
+| modern-view   | Native view                      | Kotlin & Swift     |
+| fabric-compat | Fabric view with backward compat | Java & Objective-C |
 
 # How to run
 
