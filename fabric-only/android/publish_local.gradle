@@ -1,0 +1,31 @@
+/**
+ * 查看所有任务：./gradlew tasks --all
+ * 查看publish任务：./gradlew :react-native-fabric-only:publish --dry-run
+ * local发布到MavenLocal仓库：[./gradlew :react-native-fabric-only:packageNdkReleaseLibs &&] ./gradlew :react-native-fabric-only:publishLocalPublicationToMavenLocalRepository
+ */
+
+apply plugin: 'maven-publish'
+
+def libGroup = 'com.example.android'
+def libArtifactId = 'fabric-only'
+def newArchEnabled = rootProject.hasProperty("newArchEnabled") &&  rootProject.getProperty("newArchEnabled") == "true"
+def prefix = newArchEnabled ? 'fabric-' : ''
+def libVersion = prefix + 'local-0217' //如果要改版本号，改这里
+
+// https://developer.android.com/studio/build/maven-publish-plugin?hl=zh-cn
+afterEvaluate {
+    publishing {
+        publications {
+            local(MavenPublication) {
+                from components.release
+
+                groupId = libGroup
+                artifactId = libArtifactId
+                version = libVersion
+            }
+        }
+        repositories {
+            mavenLocal()
+        }
+    }
+}
