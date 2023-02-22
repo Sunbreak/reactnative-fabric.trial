@@ -12,10 +12,8 @@ import com.facebook.soloader.SoLoader;
 
 public abstract class FabricCompatViewManagerSpec<T extends View> extends SimpleViewManager<T> implements FabricCompatViewManagerInterface<T> {
   static {
-    try {
-      SoLoader.loadLibrary("fabriccompat_registration");
-    } catch (Exception e) {
-      e.printStackTrace();
+    if (BuildConfig.CODEGEN_MODULE_REGISTRATION != null) {
+      SoLoader.loadLibrary(BuildConfig.CODEGEN_MODULE_REGISTRATION);
     }
   }
 

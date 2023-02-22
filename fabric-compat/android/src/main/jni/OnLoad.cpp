@@ -1,5 +1,5 @@
 #include <CoreComponentsRegistry.h>
-#include <react/renderer/components/RNFabricCompatViewSpec/ComponentDescriptors.h>
+#include CODEGEN_COMPONENT_DESCRIPTOR_H
 
 namespace facebook {
 namespace react {
