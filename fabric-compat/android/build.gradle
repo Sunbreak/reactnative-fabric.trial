@@ -1,3 +1,5 @@
+import groovy.json.JsonSlurper
+
 buildscript {
   repositories {
       google()
@@ -8,6 +10,25 @@ buildscript {
     classpath 'com.android.tools.build:gradle:3.5.3'
   }
 }
+
+def registrationCompat = {
+  def reactNativeManifest = file("$projectDir/../node_modules/react-native/package.json").exists()
+    ? file("$projectDir/../node_modules/react-native/package.json") // developer mode, to run example app
+    : file("$projectDir/../../react-native/package.json")
+  def reactNativeVersion = new JsonSlurper().parseText(reactNativeManifest.text).version as String
+  // https://github.com/callstack/react-native-builder-bob/discussions/359
+  // Fabric was introduced at react-native@0.68, full CMake support were introduced at react-native@0.71
+  reactNativeVersion.matches('(0.68.*|0.69.*)')
+}()
+
+def codegenLibraryName = "FabricCompatView"
+def codegenModuleName = {
+  // Autolink for Fabric uses codegenConfig.name in package.json since react-native@0.71
+  def libraryManifestJson = new JsonSlurper().parseText(file("$projectDir/../package.json").text)
+  registrationCompat ? codegenLibraryName : libraryManifestJson.codegenConfig.name
+}()
+
+def appProject = rootProject.allprojects.find { it.plugins.hasPlugin('com.android.application') }
 
 def isNewArchitectureEnabled() {
   return rootProject.hasProperty("newArchEnabled") &&  rootProject.getProperty("newArchEnabled") == "true"
@@ -34,7 +55,37 @@ android {
     minSdkVersion getExtOrIntegerDefault('minSdkVersion')
     targetSdkVersion getExtOrIntegerDefault('targetSdkVersion')
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+    buildConfigField "String", "CODEGEN_MODULE_REGISTRATION", (isNewArchitectureEnabled() && registrationCompat ? "\"${codegenModuleName}_registration\"" : "null")
+
+    if (isNewArchitectureEnabled() && registrationCompat) {
+      def reactAndroidProject = project(':ReactAndroid')
+      externalNativeBuild {
+        ndkBuild {
+          arguments "APP_PLATFORM=android-21",
+                    "APP_STL=c++_shared",
+                    "NDK_TOOLCHAIN_VERSION=clang",
+                    "GENERATED_SRC_DIR=$buildDir/generated/source", // for react_codegen_* in this library's codegen/jni
+                    "PROJECT_BUILD_DIR=${appProject.buildDir}", // for REACT_NDK_EXPORT_DIR in ReactAndroid's Android-prebuilt.mk
+                    "REACT_ANDROID_DIR=${reactAndroidProject.projectDir}",
+                    "REACT_ANDROID_BUILD_DIR=${reactAndroidProject.buildDir}",
+                    "CODEGEN_MODULE_NAME=$codegenModuleName"
+          cFlags "-Wall", "-Werror", "-fexceptions", "-frtti", "-DWITH_INSPECTOR=1"
+          cppFlags "-std=c++17"
+          targets "${codegenModuleName}_registration"
+        }
+      }
+    }
   }
+
+  if (isNewArchitectureEnabled() && registrationCompat) {
+    // We configure the NDK build only if you decide to opt-in for the New Architecture.
+    externalNativeBuild {
+      ndkBuild {
+        path "$projectDir/src/main/jni/Android.mk"
+      }
+    }
+  }
+
   buildTypes {
     release {
       minifyEnabled false
@@ -145,7 +196,7 @@ dependencies {
 if (isNewArchitectureEnabled()) {
   react {
     jsRootDir = file("../src/")
-    libraryName = "FabricCompatView"
+    libraryName = codegenLibraryName
     codegenJavaPackageName = "com.fabriccompat"
   }
 }
