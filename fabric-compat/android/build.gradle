@@ -35,7 +35,32 @@ android {
     minSdkVersion getExtOrIntegerDefault('minSdkVersion')
     targetSdkVersion getExtOrIntegerDefault('targetSdkVersion')
     buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", isNewArchitectureEnabled().toString()
+
+    if (isNewArchitectureEnabled()) {
+      def appProject = rootProject.allprojects.find { it.plugins.hasPlugin('com.android.application') }
+      externalNativeBuild {
+        cmake {
+          arguments "-DPROJECT_BUILD_DIR=$buildDir",
+            "-DGENERATED_SRC_DIR=$buildDir/generated/source", // for react_codegen_* in this library's codegen/jni
+            "-DPROJECT_BUILD_DIR=${appProject.buildDir}", // for REACT_NDK_EXPORT_DIR in ReactAndroid's Android-prebuilt.cmake
+            "-DREACT_ANDROID_DIR=$rootDir/../node_modules/react-native/ReactAndroid",
+            "-DREACT_ANDROID_BUILD_DIR=$rootDir/../node_modules/react-native/ReactAndroid/build",
+            "-DNODE_MODULES_DIR=$rootDir/../node_modules",
+            "-DANDROID_STL=c++_shared"
+        }
+      }
+    }
   }
+
+  if (isNewArchitectureEnabled()) {
+    // We configure the NDK build only if you decide to opt-in for the New Architecture.
+    externalNativeBuild {
+      cmake {
+        path "$projectDir/src/main/jni/CMakeLists.txt"
+      }
+    }
+  }
+
   buildTypes {
     release {
       minifyEnabled false
