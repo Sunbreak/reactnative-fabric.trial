@@ -45,6 +45,7 @@ apply plugin: 'kotlin-android'
 if (isNewArchitectureEnabled()) {
   apply plugin: 'com.facebook.react'
 }
+apply from: 'publish_local.gradle'
 
 def getExtOrDefault(name) {
   return rootProject.ext.has(name) ? rootProject.ext.get(name) : project.properties['FabricOnly_' + name]
@@ -89,6 +90,28 @@ android {
       ndkBuild {
         path "$projectDir/src/main/jni/Android.mk"
       }
+    }
+
+    packagingOptions {
+      jniLibs.excludes.addAll [
+        '**/libc++_shared.so',
+        '**/libfabricjni.so',
+        '**/libfbjni.so',
+        '**/libfolly_runtime.so',
+        '**/libglog.so',
+        '**/libjsi.so',
+        '**/libreact_codegen_rncore.so',
+        '**/libreact_debug.so',
+        '**/libreact_nativemodule_core.so',
+        '**/libreact_render_componentregistry.so',
+        '**/libreact_render_core.so',
+        '**/libreact_render_debug.so',
+        '**/libreact_render_graphics.so',
+        '**/librrc_view.so',
+        '**/libruntimeexecutor.so',
+        '**/libturbomodulejsijni.so',
+        '**/libyoga.so',
+      ]
     }
   }
 
@@ -203,5 +226,27 @@ if (isNewArchitectureEnabled()) {
     jsRootDir = file("../src/")
     libraryName = codegenLibraryName
     codegenJavaPackageName = "com.fabriconly"
+  }
+
+  def value = project.getProperties().get("reactNativeArchitectures")
+  def reactNativeArchitectures = value ? value.split(",") : ["armeabi-v7a", "x86", "x86_64", "arm64-v8a"]
+
+  afterEvaluate {
+    preDebugBuild.dependsOn appProject.tasks['preDebugBuild']
+    preReleaseBuild.dependsOn appProject.tasks['preReleaseBuild']
+
+    // Due to a bug inside AGP, we have to explicitly set a dependency
+    // between configureNdkBuild* tasks and the preBuild tasks.
+    // This can be removed once this is solved: https://issuetracker.google.com/issues/207403732
+    configureNdkBuildDebug.dependsOn preDebugBuild
+    configureNdkBuildRelease.dependsOn preReleaseBuild
+    reactNativeArchitectures.each { architecture ->
+      tasks.findByName("configureNdkBuildDebug[${architecture}]")?.configure {
+        dependsOn("preDebugBuild")
+      }
+      tasks.findByName("configureNdkBuildRelease[${architecture}]")?.configure {
+        dependsOn("preReleaseBuild")
+      }
+    }
   }
 }
