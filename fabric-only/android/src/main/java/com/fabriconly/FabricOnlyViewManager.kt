@@ -6,8 +6,9 @@ import com.facebook.react.uimanager.SimpleViewManager
 import com.facebook.react.uimanager.ThemedReactContext
 import com.facebook.react.uimanager.ViewManagerDelegate
 import com.facebook.react.uimanager.annotations.ReactProp
-import com.facebook.react.viewmanagers.FabricOnlyViewManagerInterface
 import com.facebook.react.viewmanagers.FabricOnlyViewManagerDelegate
+import com.facebook.react.viewmanagers.FabricOnlyViewManagerInterface
+import com.facebook.soloader.SoLoader
 
 @ReactModule(name = FabricOnlyViewManager.NAME)
 class FabricOnlyViewManager : SimpleViewManager<FabricOnlyView>(),
@@ -37,5 +38,11 @@ class FabricOnlyViewManager : SimpleViewManager<FabricOnlyView>(),
 
   companion object {
     const val NAME = "FabricOnlyView"
+
+    init {
+      if (BuildConfig.CODEGEN_MODULE_REGISTRATION != null) {
+        SoLoader.loadLibrary(BuildConfig.CODEGEN_MODULE_REGISTRATION)
+      }
+    }
   }
 }
