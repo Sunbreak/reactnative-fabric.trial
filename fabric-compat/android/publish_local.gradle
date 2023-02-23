@@ -1,0 +1,37 @@
+/**
+ * 查看所有任务：./gradlew tasks --all
+ * 查看publish任务：./gradlew :react-native-fabric-compat:publish --dry-run
+ * local发布到MavenLocal仓库：./gradlew :react-native-fabric-compat:publishLocalPublicationToMavenLocalRepository
+ */
+import groovy.json.JsonSlurper
+
+apply plugin: 'maven-publish'
+
+def reactNativeManifest = file("$projectDir/../node_modules/react-native/package.json").exists()
+    ? file("$projectDir/../node_modules/react-native/package.json") // developer mode, to run example app
+    : file("$projectDir/../../react-native/package.json")
+def reactNativeVersion = new JsonSlurper().parseText(reactNativeManifest.text).version as String
+
+def libGroup = 'com.fabriccompat'
+def libArtifactId = 'fabric-compat'
+def newArchEnabled = rootProject.hasProperty("newArchEnabled") &&  rootProject.getProperty("newArchEnabled") == "true"
+def prefix = newArchEnabled ? 'fabric-' : ''
+def libVersion = prefix + "local-RNv${reactNativeVersion}" //如果要改版本号，改这里
+
+// https://developer.android.com/studio/build/maven-publish-plugin?hl=zh-cn
+afterEvaluate {
+    publishing {
+        publications {
+            local(MavenPublication) {
+                from components.all
+
+                groupId = libGroup
+                artifactId = libArtifactId
+                version = libVersion
+            }
+        }
+        repositories {
+            mavenLocal()
+        }
+    }
+}
